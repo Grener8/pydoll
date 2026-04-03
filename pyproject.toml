@@ -9,6 +9,9 @@ packages = [
 ]
 include = ["pydoll/py.typed"]
 
+[tool.poetry.scripts]
+pydoll = "pydoll.serve.cli:main"
+
 [tool.poetry.dependencies]
 python = "^3.10"
 websockets = "^14"
