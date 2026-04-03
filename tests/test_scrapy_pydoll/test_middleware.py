@@ -13,6 +13,8 @@ class _DummySpider(Spider):
 
 
 class _DummyTab:
+    _page_source_html = '<html><body>ok</body></html>'
+
     def __init__(self):
         self.query = AsyncMock()
         self.execute_script = AsyncMock()
@@ -22,7 +24,10 @@ class _DummyTab:
         self.get_cookies = AsyncMock(return_value=[])
         self.go_to = AsyncMock()
         self.close = AsyncMock()
-        self.page_source = '<html><body>ok</body></html>'
+
+    @property
+    async def page_source(self):
+        return self._page_source_html
 
 
 class _DummyBrowser:

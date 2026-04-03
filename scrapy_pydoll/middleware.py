@@ -9,14 +9,15 @@ from http.cookies import SimpleCookie
 from time import monotonic
 from typing import Any, Optional
 
-from pydoll import exceptions as pydoll_exceptions
-from pydoll.browser import Chrome
-from pydoll.browser.options import ChromiumOptions
 from scrapy import Request, signals
 from scrapy.downloadermiddlewares.retry import get_retry_request
 from scrapy.exceptions import IgnoreRequest
 from scrapy.http import HtmlResponse
 from scrapy.utils.defer import deferred_from_coro
+
+from pydoll import exceptions as pydoll_exceptions
+from pydoll.browser import Chrome
+from pydoll.browser.options import ChromiumOptions
 
 logger = logging.getLogger(__name__)
 ASYNCIO_REACTOR = 'twisted.internet.asyncioreactor.AsyncioSelectorReactor'
@@ -186,7 +187,8 @@ class PydollMiddleware:
         remaining_seconds = self._remaining_seconds(start_time, timeout_ms)
         await tab.go_to(url, timeout=remaining_seconds)
 
-    async def _inject_request_cookies(self, request: Request, tab):
+    @staticmethod
+    async def _inject_request_cookies(request: Request, tab):
         cookie_header = request.headers.get('Cookie') or request.headers.get(b'Cookie')
         if not cookie_header:
             return
@@ -275,14 +277,16 @@ class PydollMiddleware:
 
         if action_type == 'click':
             selector = self._required_str(action, 'selector')
-            element = await tab.query(selector, timeout=self._remaining_seconds(start_time, timeout_ms))
+            timeout = self._remaining_seconds(start_time, timeout_ms)
+            element = await tab.query(selector, timeout=timeout)
             await element.click()
             return
 
         if action_type == 'type':
             selector = self._required_str(action, 'selector')
             text = self._required_str(action, 'text')
-            element = await tab.query(selector, timeout=self._remaining_seconds(start_time, timeout_ms))
+            timeout = self._remaining_seconds(start_time, timeout_ms)
+            element = await tab.query(selector, timeout=timeout)
             await element.insert_text(text)
             return
 
@@ -300,7 +304,9 @@ class PydollMiddleware:
             if wait_for == 'sleep':
                 milliseconds = action.get('ms')
                 if not isinstance(milliseconds, int) or milliseconds < 0:
-                    raise InvalidPydollAction('wait sleep action requires non-negative integer "ms"')
+                    raise InvalidPydollAction(
+                        'wait sleep action requires non-negative integer "ms"'
+                    )
                 if milliseconds > self._remaining_ms(start_time, timeout_ms):
                     raise PydollTimeout('Pydoll timeout')
                 await asyncio.sleep(milliseconds / 1000)
@@ -342,7 +348,9 @@ class PydollMiddleware:
             type(exc).__name__,
         )
 
-    def _retry_or_fail(self, request: Request, spider, exc: Exception, actions: list[dict[str, Any]]):
+    def _retry_or_fail(
+        self, request: Request, spider, exc: Exception, actions: list[dict[str, Any]]
+    ):
         self._record_failure(request, exc, actions)
         retry_request: Optional[Request] = get_retry_request(
             request,
