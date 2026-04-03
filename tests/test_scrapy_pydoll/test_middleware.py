@@ -105,12 +105,10 @@ class TestProcessRequestPassThrough:
     @pytest.mark.asyncio
     async def test_returns_none_with_pydoll_meta_false(self):
         mw = _make_middleware()
-        request = scrapy.Request('http://example.com', meta={'pydoll': False})
         spider = MagicMock()
-        # pydoll key present but set to False → still intercepted (key presence check)
-        # This test verifies a *plain* request without pydoll key is passed through
-        request2 = scrapy.Request('http://example.com')
-        result = await mw.process_request(request2, spider)
+        # A plain request without any 'pydoll' meta key is passed through
+        request = scrapy.Request('http://example.com')
+        result = await mw.process_request(request, spider)
         assert result is None
 
     @pytest.mark.asyncio
@@ -125,7 +123,7 @@ class TestProcessRequestPassThrough:
         assert isinstance(result, HtmlResponse)
 
     @pytest.mark.asyncio
-    async def test_returns_none_with_empty_pydoll_meta_dict(self):
+    async def test_handles_empty_pydoll_meta_dict(self):
         """Empty dict is truthy – request should be handled by Pydoll."""
         mw = _make_middleware()
         tab = _make_tab()

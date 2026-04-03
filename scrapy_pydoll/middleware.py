@@ -165,8 +165,8 @@ class PydollMiddleware:
     def _build_options(self) -> ChromiumOptions:
         options = ChromiumOptions()
         opts = self._browser_options
-        if opts.get('headless'):
-            options.headless = True
+        if 'headless' in opts:
+            options.headless = bool(opts['headless'])
         if opts.get('binary_location'):
             options.binary_location = opts['binary_location']
         for arg in opts.get('arguments', []):
