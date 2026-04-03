@@ -303,7 +303,7 @@ async def set_cookies_handler(request: web.Request) -> web.Response:
     payload = await request.json()
     cookies = payload.get('cookies') if isinstance(payload, dict) else payload
     if not isinstance(cookies, list):
-        raise ValidationError.from_exception_data('SetCookies', [])
+        raise ActionExecutionError('cookies must be a list')
 
     async def _set() -> web.Response:
         await session.tab.set_cookies(cookies)
