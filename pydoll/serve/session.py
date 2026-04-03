@@ -58,7 +58,7 @@ class SessionManager:
         Raises:
             RuntimeError: If the maximum number of sessions has been reached.
         """
-        if not self._semaphore._value and len(self._sessions) >= self._max_sessions:  # noqa: SLF001
+        if len(self._sessions) >= self._max_sessions:
             raise RuntimeError('Maximum number of sessions reached')
 
         async with self._semaphore:

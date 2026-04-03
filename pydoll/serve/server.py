@@ -98,9 +98,9 @@ async def error_middleware(request: web.Request, handler):  # type: ignore[no-un
             status=exc.status,
             content_type='application/json',
         )
-    except Exception as exc:
+    except Exception:
         logger.exception('Unhandled error for %s %s', request.method, request.path)
-        return _error_response(str(exc), 'InternalServerError', 500)
+        return _error_response('An internal server error occurred', 'InternalServerError', 500)
 
 
 # ---------------------------------------------------------------------------
@@ -179,13 +179,12 @@ async def _get_content(request: web.Request) -> web.Response:
         return _error_response('Session not found', 'SessionNotFound', 404, session_id)
 
     fmt = request.rel_url.query.get('format', 'html')
+    html = await session.tab.page_source
 
     if fmt == 'json':
         # Future-proofed: return raw JSON with HTML content
-        html = await session.tab.page_source
         return _json_response({'content': html, 'format': 'json'})
 
-    html = await session.tab.page_source
     response = ContentResponse(content=html)
     return _json_response(response.model_dump())
 

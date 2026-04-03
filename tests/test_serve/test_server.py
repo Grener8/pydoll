@@ -1,14 +1,10 @@
 """Tests for pydoll.serve.server (HTTP API handlers)."""
 
-import json
 import pytest
 import pytest_asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from aiohttp.test_utils import TestClient, TestServer
-
 from pydoll.serve.server import create_app
-from pydoll.serve.session import Session, SessionManager
 
 
 # ---------------------------------------------------------------------------
@@ -225,31 +221,21 @@ async def test_get_content(app_client):
     create_resp = await app_client.post('/sessions', json={})
     session_id = (await create_resp.json())['session_id']
 
-    # Mock page_source as a coroutine property using AsyncMock-based approach
     manager = app_client.app['session_manager']
     session = manager.get_session(session_id)
 
-    # page_source is an async property - mock _execute_command to return HTML
-    type(session.tab).page_source = MagicMock()
+    # page_source is an async property on Tab; assign a coroutine to the mock attribute
+    html = '<html><body>Test</body></html>'
 
-    # Patch at module level for the specific tab instance
-    with patch.object(
-        type(session.tab),
-        'page_source',
-        new_callable=lambda: property(lambda self: _async_page_source()),
-    ):
-        pass  # This approach won't work cleanly; use direct attribute mock below
+    async def _fake_page_source():
+        return html
 
-    # Simplest approach: override the coroutine returned by page_source
-    async def fake_page_source():
-        return '<html><body>Test</body></html>'
-
-    session.tab.page_source = fake_page_source()
+    session.tab.page_source = _fake_page_source()
 
     resp = await app_client.get(f'/sessions/{session_id}/content')
-    # The handler calls `await session.tab.page_source`
-    # Since we set it to a coroutine, it should work
-    assert resp.status in (200, 500)  # 500 if property access fails due to mock limitations
+    assert resp.status == 200
+    data = await resp.json()
+    assert data['content'] == html
 
 
 @pytest.mark.asyncio

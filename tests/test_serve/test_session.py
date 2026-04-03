@@ -1,6 +1,5 @@
 """Tests for pydoll.serve.session."""
 
-import asyncio
 import time
 
 import pytest
@@ -109,11 +108,9 @@ class TestSessionManager:
 
     async def test_max_sessions_enforced(self):
         manager = SessionManager(_make_browser(), max_sessions=2, session_timeout=300)
-        # Exhaust the semaphore manually so create_session raises
-        manager._semaphore = asyncio.Semaphore(0)
-        # Also fill sessions dict
-        for i in range(2):
-            manager._sessions[str(i)] = MagicMock()
+        # Fill up to max_sessions
+        await manager.create_session()
+        await manager.create_session()
 
         with pytest.raises(RuntimeError, match='Maximum'):
             await manager.create_session()
