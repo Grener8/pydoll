@@ -17,6 +17,9 @@ aiofiles = "^25.1.0"
 typing_extensions = "^4.14.0"
 pydantic = "^2.0"
 
+[tool.poetry.scripts]
+pydoll = "pydoll.cli:main"
+
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.7.1"
